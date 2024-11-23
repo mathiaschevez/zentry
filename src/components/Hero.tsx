@@ -1,31 +1,91 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Button from "./Button";
 import { TiLocationArrow } from "react-icons/ti";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/all";
 
-export default function Hero() {
+gsap.registerPlugin(ScrollTrigger)
+
+export default function Hero() { 
   const [currentIndex, setCurrentindex] = useState(1);
   const [hasClicked, setHasClicked] = useState(false);
-  // const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [loadedVideos, setLoadedVideos] = useState(0);
 
   const totalVideos = 4;
-  const nextVideoRef = useRef(null);
+  const nextVideoRef = useRef<HTMLVideoElement | null>(null);
+  const currentVideoRef = useRef<HTMLVideoElement | null>(null);
 
   const upcomingVideoIndex = currentIndex === totalVideos ? 1 : currentIndex + 1;
 
   function handleMiniVideoClick() {
-    console.log(hasClicked)
     setHasClicked(true);
     setCurrentindex(upcomingVideoIndex);
   }
 
   function handleVideoLoad() {
-    console.log(loadedVideos)
     setLoadedVideos(prev => prev + 1);
   }
 
+  useEffect(function checkVideosLoaded() {
+    if (loadedVideos === totalVideos -1) setIsLoading(false);
+  }, [loadedVideos]);
+
+  useGSAP(() => {
+    if (hasClicked) {
+      gsap.set('#next-video', { visibility: 'visible' })
+      gsap.to('#next-video', {
+        transformOrigin: 'center center',
+        scale: 1,
+        width: '100%',
+        height: '100%',
+        duration: 1,
+        ease: 'power1.inOut',
+        onStart: () => {
+          const current = nextVideoRef.current;
+          if (nextVideoRef === null || current === null) return
+          else current.play();
+        }
+      })
+
+      gsap.from('#current-video', {
+        transformOrigin: 'center center',
+        scale: 0,
+        duration: 1.5,
+        ease: 'power1.inOut',
+      })
+    }
+  }, { dependencies: [currentIndex], revertOnUpdate: true })
+
+  useGSAP(() => {
+    gsap.set('#video-frame', {
+      clipPath: 'polygon(14% 0%, 72% 0%, 90% 90%, 0% 100%)',
+      borderRadius: '0 0 40% 10%'
+    })
+
+    gsap.from('#video-frame', {
+      clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)',
+      borderRadius: '0 0 0 0',
+      ease: 'power1.inOut',
+      scrollTrigger: {
+        trigger: '#video-frame',
+        start: 'center center',
+        end: 'bottom center',
+        scrub: true,
+      }
+    })
+  })
+
   return (
     <div className='relative h-dvh w-screen overflow-x-hidden'>
+      {isLoading && <div className="flex-center absolute z-[100] h-dvh w-screen overflow-hidden bg-violet-50">
+        <div className="three-body">
+          <div className="three-body__dot" />
+          <div className="three-body__dot" />
+          <div className="three-body__dot" />
+        </div>
+      </div>}
       <div id='video-frame' className='relative z-10 h-dvh w-screen overflow-hidden rounded-lg bg-blue-75'>
         <div>
           <div className='mask-clip-path absolute-center absolute z-50 size-64 cursor-pointer overflow-hidden rounded-lg'>
@@ -51,7 +111,8 @@ export default function Hero() {
             onLoadedData={handleVideoLoad}
           />
           <video
-            src={`videos/hero-${currentIndex}.mp4`}
+            ref={currentVideoRef}
+            src={`videos/hero-${currentIndex === 1 ? totalVideos : currentIndex - 1}.mp4`}
             autoPlay
             loop
             muted
