@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react"
 import gsap from 'gsap'
+import clsx from "clsx";
 
-function AnimatedTitle({ title, containerClass }: { title: string, containerClass?: string } ) {
+function AnimatedTitle({ title, sectionId, containerClass }: { title: string, sectionId?: string, containerClass?: string } ) {
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -28,12 +29,13 @@ function AnimatedTitle({ title, containerClass }: { title: string, containerClas
 
   return (
     <div
+      id={sectionId}
       ref={containerRef}
-      className={`animated-title ${containerClass}`}
+      className={clsx("animated-title", containerClass)}
     >
-      {title.split('<br />').map((line: string, index: number) => (
+      {title.split("<br />").map((line: string, index: number) => (
         <div key={index} className="flex-center max-w-full flex-wrap gap-2 px-10 md:gap-3">
-          {line.split(' ').map((word: string, i: number) => (
+          {line.split(" ").map((word: string, i: number) => (
             <span key={i} className="animated-word" dangerouslySetInnerHTML={{ __html: word }} />
           ))}
         </div>
